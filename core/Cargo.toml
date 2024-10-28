@@ -1,0 +1,9 @@
+[package]
+name = "ludo-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+risc0-zkp = { git = "https://github.com/risc0/risc0", tag = "v1.0.1" }
+risc0-zkvm = { git = "https://github.com/risc0/risc0", tag = "v1.0.1" }
+serde = "1.0.213"
