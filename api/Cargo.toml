@@ -1,0 +1,15 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+host = { path = "../host" }
+ludo-core = { path = "../core" }
+methods = { path = "../methods" }
+axum = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.4", features = ["v4"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
