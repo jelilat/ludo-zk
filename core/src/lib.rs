@@ -9,9 +9,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PieceStatus {
-    Home,
-    Active,
-    Win,
+    Home,   // Piece is in starting position
+    Active, // Piece is on the board
+    Win,    // Piece has reached the end
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -24,7 +24,7 @@ pub enum Color {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Piece {
-    pub position: i8,
+    pub position: i8, // Current position on the path (-1 for home)
     pub status: PieceStatus,
 }
 
@@ -38,8 +38,8 @@ impl Piece {
 pub struct Player {
     pub name: String,
     pub color: Color,
-    pub pieces: [Piece; 4],
-    pub path: Vec<u8>,
+    pub pieces: [Piece; 4], // Each player has 4 pieces
+    pub path: Vec<u8>,      // The sequence of board positions this player must follow
 }
 
 impl Player {
@@ -58,11 +58,13 @@ pub struct LudoGameState {
     pub players: Vec<Player>,
     pub current_player: usize,
     pub dice_roll: u8,
-    pub winners: Vec<usize>,
-    pub sixes: u8,
+    pub winners: Vec<usize>, // Tracks players who have won
+    pub sixes: u8,           // Counts consecutive sixes rolled
 }
 
 impl LudoGameState {
+    // Handles dice roll and determines if player's turn should end
+    // Returns true if the turn should end automatically
     pub fn roll_dice(&mut self, dice_roll: u8) -> bool {
         self.dice_roll = dice_roll;
 
@@ -88,6 +90,7 @@ impl LudoGameState {
         false
     }
 
+    // Determines the next player's turn, skipping any winners
     pub fn get_next_turn(&self) -> usize {
         let mut next_index = (self.current_player + 1) % self.players.len();
         while self.winners.contains(&next_index) {
@@ -96,6 +99,10 @@ impl LudoGameState {
         next_index
     }
 
+    // Handles piece movement logic including:
+    // - Moving active pieces forward
+    // - Bringing pieces out of home on rolling 6
+    // - Handling winning conditions
     pub fn move_piece(&mut self, piece_index: usize) {
         let player = &mut self.players[self.current_player];
         let piece = &mut player.pieces[piece_index];
@@ -119,6 +126,9 @@ impl LudoGameState {
         }
     }
 
+    // Handles collisions between pieces:
+    // - Sends opponent pieces back home if landed on
+    // - Updates turn based on dice roll
     fn handle_collision(&mut self, new_position: i8) {
         let current_player = self.current_player;
         let current_position = self.players[current_player].path[new_position as usize];
@@ -157,7 +167,7 @@ pub struct InitializeGameStateCommit {
 pub struct Play {
     pub current_player: usize,
     pub dice_roll: u8,
-    pub piece_index: u8,
+    pub piece_index: u8, // Which piece the player chose to move
 }
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -186,6 +196,10 @@ impl PlayGameParams {
         PlayGameParams { state, play }
     }
 
+    // Processes a single play action:
+    // 1. Rolls the dice
+    // 2. Moves the chosen piece if necessary
+    // 3. Returns the new game state and next player
     pub fn process(&self) -> PlayGameResult {
         // TODO: require state.current_player == self.play.current_player
         let mut state = self.state.clone();
