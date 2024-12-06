@@ -1,6 +1,6 @@
 use bincode;
 use ludo_core::{InitializeGameStateCommit, LudoGameState, Play, PlayGameCommit, PlayGameParams};
-use methods::{INIT_ELF, INIT_ID, PLAY_ELF, PLAY_ID};
+use methods::{INIT_ELF, INIT_ID, PLAY_ELF, PLAY_ID, WINNERS_ELF, WINNERS_ID};
 use risc0_zkvm::{default_prover, serde::from_slice, ExecutorEnv, Receipt, Result};
 use std::fs;
 
@@ -49,18 +49,20 @@ impl Game {
         Self { state }
     }
 
+    // Helper function to write receipts to files
+    fn write_receipt_to_files(receipt: &Receipt, image_id: &[u32; 8]) -> Result<()> {
+        let serialized = bincode::serialize(&receipt.inner)?;
+        fs::write(PROOF_FILE_PATH, serialized)?;
+        fs::write(IMAGE_ID_FILE_PATH, convert(image_id))?;
+        fs::write(PUB_INPUT_FILE_PATH, &receipt.journal.bytes)?;
+        Ok(())
+    }
+
     pub fn init(&self) -> Result<InitMessage> {
         let env = ExecutorEnv::builder().write(&self.state)?.build()?;
         let prover = default_prover();
         let receipt = prover.prove(env, INIT_ELF)?.receipt;
-
-        let serialized = bincode::serialize(&receipt.inner).unwrap();
-        fs::write(PROOF_FILE_PATH, serialized).expect("Failed to write proof file");
-        fs::write(IMAGE_ID_FILE_PATH, convert(&INIT_ID)).expect("Failed to write image_id file");
-
-        fs::write(PUB_INPUT_FILE_PATH, &receipt.journal.bytes)
-            .expect("Failed to write pub_input file");
-
+        write_receipt_to_files(&receipt, &INIT_ID)?;
         Ok(InitMessage { receipt })
     }
 
@@ -73,17 +75,34 @@ impl Game {
             .build()?;
         let prover = default_prover();
         let receipt = prover.prove(env, PLAY_ELF)?.receipt;
-
-        let serialized = bincode::serialize(&receipt.inner).unwrap();
-        // Write the serialized receipt to a file
-        fs::write(PROOF_FILE_PATH, serialized).expect("Failed to write proof file");
-        fs::write(IMAGE_ID_FILE_PATH, convert(&PLAY_ID)).expect("Failed to write image_id file");
-
-        fs::write(PUB_INPUT_FILE_PATH, &receipt.journal.bytes)
-            .expect("Failed to write pub_input file");
-
+        write_receipt_to_files(&receipt, &PLAY_ID)?;
         self.state = from_slice(&output)?;
         Ok(PlayMessage { receipt })
+    }
+
+    pub fn verify_winners(&self) -> Result<WinnersMessage> {
+        // Check if we have up to 3 winners
+        if self.state.winners.len() >= 3 {
+            return Err("Game must have up to 3 winners".into());
+        }
+
+        let env = ExecutorEnv::builder().write(&self.state)?.build()?;
+
+        let prover = default_prover();
+        let receipt = prover.prove(env, WINNERS_ELF)?.receipt;
+        write_receipt_to_files(&receipt, &WINNERS_ID)?;
+        Ok(WinnersMessage { receipt })
+    }
+}
+
+pub struct WinnersMessage {
+    pub receipt: Receipt,
+}
+
+impl WinnersMessage {
+    pub fn verify_and_get_commit(&self) -> Result<WinnersCommit> {
+        self.receipt.verify(WINNERS_ID)?;
+        Ok(self.receipt.journal.decode()?)
     }
 }
 

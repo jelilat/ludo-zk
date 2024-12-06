@@ -53,8 +53,17 @@ pub async fn play_game(
         .verify_and_get_commit()
         .expect("Failed to verify play commit");
 
+    // Check for winners after play
+    let game_ended = game_instance.state.winners.len() >= 3;
+    if game_ended {
+        game_instance
+            .verify_winners()
+            .expect("Failed to verify winners");
+    }
+
     Json(PlayResponse {
         commit,
         state: game_instance.state.clone(),
+        game_ended,
     })
 }

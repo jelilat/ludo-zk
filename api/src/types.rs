@@ -11,6 +11,7 @@ pub struct InitResponse {
 pub struct PlayResponse {
     pub commit: PlayGameCommit,
     pub state: LudoGameState,
+    pub game_ended: bool,
 }
 
 #[derive(Deserialize)]
