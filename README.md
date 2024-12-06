@@ -62,11 +62,3 @@ The rules of the game are based on the traditional Ludo game. Players take turns
 ## zk Proof System
 
 This project uses a zero-knowledge proof system to ensure that each game state update is valid. The RISC0 framework is used to generate and verify proofs, ensuring that all moves are legitimate without revealing any private information.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
-## Developer
-
-This project was developed by [Jelilat](https://github.com/jelilat). Jelilat is an ex-[Nethermind](https://nethermind.io/) software engineer and a blockchain developer.
