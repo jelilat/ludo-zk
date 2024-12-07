@@ -1,10 +1,10 @@
 // #![cfg_attr(not(test), no_std)]
 
 use risc0_zkp::core::digest::Digest;
-use risc0_zkvm::{
-    serde::to_vec,
-    sha::{Impl, Sha256},
-};
+// use risc0_zkvm::{
+//     serde::to_vec,
+//     sha::{Impl, Sha256},
+// };
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -213,4 +213,9 @@ impl PlayGameParams {
 
         PlayGameResult { state, next_player }
     }
+}
+
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct WinnersCommit {
+    pub winners: Vec<usize>,
 }

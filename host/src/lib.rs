@@ -1,5 +1,7 @@
 use bincode;
-use ludo_core::{InitializeGameStateCommit, LudoGameState, Play, PlayGameCommit, PlayGameParams};
+use ludo_core::{
+    InitializeGameStateCommit, LudoGameState, Play, PlayGameCommit, PlayGameParams, WinnersCommit,
+};
 use methods::{INIT_ELF, INIT_ID, PLAY_ELF, PLAY_ID, WINNERS_ELF, WINNERS_ID};
 use risc0_zkvm::{default_prover, serde::from_slice, ExecutorEnv, Receipt, Result};
 use std::fs;
@@ -62,7 +64,7 @@ impl Game {
         let env = ExecutorEnv::builder().write(&self.state)?.build()?;
         let prover = default_prover();
         let receipt = prover.prove(env, INIT_ELF)?.receipt;
-        write_receipt_to_files(&receipt, &INIT_ID)?;
+        Self::write_receipt_to_files(&receipt, &INIT_ID)?;
         Ok(InitMessage { receipt })
     }
 
@@ -75,7 +77,7 @@ impl Game {
             .build()?;
         let prover = default_prover();
         let receipt = prover.prove(env, PLAY_ELF)?.receipt;
-        write_receipt_to_files(&receipt, &PLAY_ID)?;
+        Self::write_receipt_to_files(&receipt, &PLAY_ID)?;
         self.state = from_slice(&output)?;
         Ok(PlayMessage { receipt })
     }
@@ -83,14 +85,14 @@ impl Game {
     pub fn verify_winners(&self) -> Result<WinnersMessage> {
         // Check if we have up to 3 winners
         if self.state.winners.len() >= 3 {
-            return Err("Game must have up to 3 winners".into());
+            return Err(anyhow::anyhow!("Game must have up to 3 winners"));
         }
 
         let env = ExecutorEnv::builder().write(&self.state)?.build()?;
 
         let prover = default_prover();
         let receipt = prover.prove(env, WINNERS_ELF)?.receipt;
-        write_receipt_to_files(&receipt, &WINNERS_ID)?;
+        Self::write_receipt_to_files(&receipt, &WINNERS_ID)?;
         Ok(WinnersMessage { receipt })
     }
 }
