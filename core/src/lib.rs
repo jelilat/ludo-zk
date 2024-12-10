@@ -69,6 +69,7 @@ impl LudoGameState {
         self.dice_roll = dice_roll;
 
         if dice_roll == 6 {
+            self.winners.push(self.current_player);
             self.sixes += 1;
         }
 
@@ -208,7 +209,7 @@ impl PlayGameParams {
             state.move_piece(self.play.piece_index as usize);
         }
 
-        state.dice_roll = 0;
+        // state.dice_roll = 0;
         let next_player = state.current_player;
 
         PlayGameResult { state, next_player }

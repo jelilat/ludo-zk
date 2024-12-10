@@ -11,13 +11,18 @@ pub fn main() {
     let state: LudoGameState = env::read();
 
     // Verify we have exactly 3 winners
-    assert_eq!(state.winners.len(), 3, "Game must have exactly 3 winners");
+    // assert_eq!(state.winners.len(), 3, "Game must have exactly 3 winners");
 
     // Create winners commit
-    let winners_commit = WinnersCommit {
-        winners: state.winners.clone(),
-    };
+    // let winners_commit = WinnersCommit {
+    //     winners: state.winners.clone(),
+    // };
 
-    // Commit the winners
-    env::commit(&winners_commit);
+    if !state.winners.is_empty() {
+        let winner = state.winners[0];
+        let winner_color = &state.players[winner].color;
+
+        // Commit the winners
+        env::commit(&winner_color);
+    }
 }

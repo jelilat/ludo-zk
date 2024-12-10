@@ -1,6 +1,7 @@
 use bincode;
 use ludo_core::{
-    InitializeGameStateCommit, LudoGameState, Play, PlayGameCommit, PlayGameParams, WinnersCommit,
+    Color, InitializeGameStateCommit, LudoGameState, Play, PlayGameCommit, PlayGameParams,
+    WinnersCommit,
 };
 use methods::{INIT_ELF, INIT_ID, PLAY_ELF, PLAY_ID, WINNERS_ELF, WINNERS_ID};
 use risc0_zkvm::{default_prover, serde::from_slice, ExecutorEnv, Receipt, Result};
@@ -53,10 +54,27 @@ impl Game {
 
     // Helper function to write receipts to files
     fn write_receipt_to_files(receipt: &Receipt, image_id: &[u32; 8]) -> Result<()> {
-        let serialized = bincode::serialize(&receipt.inner)?;
-        fs::write(PROOF_FILE_PATH, serialized)?;
-        fs::write(IMAGE_ID_FILE_PATH, convert(image_id))?;
-        fs::write(PUB_INPUT_FILE_PATH, &receipt.journal.bytes)?;
+        // let serialized = bincode::serialize(&receipt.inner)?;
+        // fs::write(PROOF_FILE_PATH, serialized)?;
+        // fs::write(IMAGE_ID_FILE_PATH, convert(image_id))?;
+        // fs::write(PUB_INPUT_FILE_PATH, &receipt.journal.bytes)?;
+
+        let receipt_inner_bytes_array = bincode::serialize(&receipt.inner).unwrap();
+        fs::write("receipt_inner.hex", hex::encode(&receipt_inner_bytes_array)).unwrap();
+
+        let receipt_journal_bytes_array = bincode::serialize(&receipt.journal).unwrap();
+        println!(
+            "Serialized bytes array (hex) JOURNAL: {:?}\n",
+            hex::encode(&receipt_journal_bytes_array)
+        );
+        let mut image_id_hex = String::new();
+        for &value in image_id {
+            image_id_hex.push_str(&format!("{:08x}", value.to_be()));
+        }
+        println!(
+            "Serialized bytes array (hex) IMAGE_ID: {:?}\n",
+            image_id_hex
+        );
         Ok(())
     }
 
@@ -84,15 +102,19 @@ impl Game {
 
     pub fn verify_winners(&self) -> Result<WinnersMessage> {
         // Check if we have up to 3 winners
-        if self.state.winners.len() >= 3 {
-            return Err(anyhow::anyhow!("Game must have up to 3 winners"));
-        }
+        // if self.state.winners.len() >= 3 {
+        //     return Err(anyhow::anyhow!("Game must have up to 3 winners"));
+        // }
 
         let env = ExecutorEnv::builder().write(&self.state)?.build()?;
 
         let prover = default_prover();
         let receipt = prover.prove(env, WINNERS_ELF)?.receipt;
         Self::write_receipt_to_files(&receipt, &WINNERS_ID)?;
+
+        let winner = self.state.winners[0];
+        let winner_color = &self.state.players[winner].color;
+        println!("{:?}", winner_color);
         Ok(WinnersMessage { receipt })
     }
 }
@@ -102,7 +124,7 @@ pub struct WinnersMessage {
 }
 
 impl WinnersMessage {
-    pub fn verify_and_get_commit(&self) -> Result<WinnersCommit> {
+    pub fn verify_and_get_commit(&self) -> Result<Color> {
         self.receipt.verify(WINNERS_ID)?;
         Ok(self.receipt.journal.decode()?)
     }

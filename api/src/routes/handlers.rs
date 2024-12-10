@@ -52,9 +52,9 @@ pub async fn play_game(
     let commit = play_message
         .verify_and_get_commit()
         .expect("Failed to verify play commit");
-
+    println!("{}", game_instance.state.dice_roll);
     // Check for winners after play
-    let game_ended = game_instance.state.winners.len() >= 3;
+    let game_ended = game_instance.state.dice_roll == 6;
     if game_ended {
         game_instance
             .verify_winners()
