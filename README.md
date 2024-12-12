@@ -48,8 +48,12 @@ To get started with the Ludo game, follow these steps:
    ```
 5. Run the game:
    ```bash
-   cargo run
+   cargo run --bin host
    ```
+
+## API
+
+The API is available at `http://127.0.0.1:3003`. Run `cargo run --bin api` to start the API.
 
 ## Usage
 
